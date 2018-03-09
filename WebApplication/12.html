@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+<div id="net1"></div>
+<script src="https://gw.alipayobjects.com/os/antv/assets/g6/1.2.3/g6.min.js"></script>
+<script src="https://gw.alipayobjects.com/os/antv/assets/lib/jquery-3.2.1.min.js"></script>
+<script type="text/javascript" language="javascript">
+    const net = new G6.Net({
+        id: 'net1',
+        height: window.innerHeight,
+        width: window.innerWidth,
+        grid:null
+        //{
+        //    forceAlign: true, // 是否支持网格对齐
+        //    cell: 10, // 网格大小
+        //    line: { // 网格线样式
+        //        stroke: 'red'
+        //    }
+        //}
+    });
+
+    var group = net.get("backGroup");
+    //var mygroup = group.addGroup('mygroup', { attrs: {
+    //        x1: 100,
+    //        y1: 200,
+    //        x2: 100,
+    //        y2: 300,
+    //        stroke: 'red' 
+    //    }
+    //});
+
+    //console.log(mygroup);
+    var line = group.addShape("line", { attrs: {
+        x1: 100,
+        y1: 200,
+        x2: 100,
+        y2: 300,
+        stroke: 'black' 
+    }
+    });
+    console.log(line);
+    net.render();
+</script>
+</body>
+</html>

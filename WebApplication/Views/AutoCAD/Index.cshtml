@@ -1,0 +1,204 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>title</title>
+
+</head>
+<body>
+    <div id="net">
+        <input type="button" id="switch" value="切换背景" />
+        查看图层:<select id="layer"></select>
+    </div>
+    <script src="https://gw.alipayobjects.com/os/antv/assets/g6/1.2.3/g6.min.js"></script>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" language="javascript">
+
+        window.onload = function () {
+
+            $('body').css({ "background-color": "#FFFFFF" });
+            const net = new G6.Net({
+                id: 'net',           // 容器ID
+                height: window.innerHeight,// 画布高
+                grid: null
+                //{
+                //    forceAlign: true, // 是否支持网格对齐
+                //    cell: 10,         // 网格大小
+                //    line: {           // 网格线样式
+                //        stroke: 'black'
+                //    }
+                //}
+            });
+
+
+            RequestData(net,2,"all");
+            var colorName = "white";
+            $('#switch').on('click', function () {
+                var rgb = $('body').css('background-color');
+                if (RGBToHex(rgb) == '#FFFFFF') {
+                    RequestData(net, 1, "all");
+                } else {
+                    RequestData(net, 2, "all");
+                }
+                if (colorName == "white") {
+                    $('body').css({ "background-color": "#212830" });
+
+                    colorName = "black"; //return;
+                } else {
+                    $('body').css({ "background-color": "white" });
+                    colorName = "white";
+                }
+
+                var group = net.get("backGroup");
+
+                group.clear();
+            });
+
+
+            $("#layer").on("change", function () {
+
+                var layerName = this.value;
+                var rgb = $('body').css('background-color');
+                if (RGBToHex(rgb) == '#FFFFFF') {
+                    RequestData(net, 2, layerName);
+                } else {
+                    RequestData(net, 1, layerName);
+                }
+                console.log(this.value);
+
+                var group = net.get("backGroup");
+
+                group.clear();
+            });
+
+        }
+
+        var RGBToHex = function (rgb) {
+            var regexp = /[0-9]{0,3}/g;
+            var re = rgb.match(regexp);//利用正则表达式去掉多余的部分，将rgb中的数字提取
+            var hexColor = "#"; var hex = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+            for (var i = 0; i < re.length; i++) {
+                var r = null, c = re[i], l = c;
+                var hexAr = [];
+                while (c > 16) {
+                    r = c % 16;
+                    c = (c / 16) >> 0;
+                    hexAr.push(hex[r]);
+                } hexAr.push(hex[c]);
+                if (l < 16 && l != "") {
+                    hexAr.push(0);
+                }
+                hexColor += hexAr.reverse().join('');
+            }
+            return hexColor;
+        }
+
+        var drawCanvas = function (data, net) {
+            var group = net.get("backGroup");
+
+            //线条
+            if (data[0].LineElements != null) {
+                data[0].LineElements.forEach(function (currentValue, index, arr) {
+                    group.addShape('line', {
+                        attrs: {
+                            x1: currentValue.X,
+                            y1: currentValue.Y,
+                            x2: currentValue.X2,
+                            y2: currentValue.Y2,
+                            stroke: 'rgb(' + currentValue.R + ', ' + currentValue.G + ', ' + currentValue.B + ')'//currentValue.Color
+                        }
+                    });
+                });
+            }
+            //文本
+            if (data[0].TextElements != null) {
+
+                data[0].TextElements.forEach(function (currentValue, index, arr) {
+                    group.addShape('text', {
+                        attrs: {
+                            x: currentValue.X,
+                            y: currentValue.Y,
+                            fontFamily: currentValue.Fontfamily,
+                            text: currentValue.Value,
+                            fontSize: parseInt(currentValue.Height),
+                            stroke: 'rgb(' + currentValue.R + ', ' + currentValue.G + ', ' + currentValue.B + ')'
+                        }
+                    });
+                });
+
+            }
+            //圆
+            if (data[0].CircleElements != null) {
+                data[0].CircleElements.forEach(function (currentValue, index, arr) {
+                    group.addShape('Circle', {
+                        attrs: {
+                            x: currentValue.X,
+                            y: currentValue.Y,
+                            r: currentValue.Radius,
+                            stroke: 'rgb(' + currentValue.R + ', ' + currentValue.G + ', ' + currentValue.B + ')'
+                        }
+                    });
+
+                });
+            }
+
+            //圆弧
+            if (data[0].PathElements != null) {
+
+                data[0].PathElements.forEach(function (currentValue) {
+                    group.addShape('arc', {
+                        attrs: {
+                            x: currentValue.X,
+                            y: currentValue.Y,
+                            r: currentValue.Radius,
+                            startAngle: (360 - currentValue.EndAngle) * Math.PI / 180,//1/6 * Math.PI,*Math.PI/90
+                            endAngle: (360 - currentValue.StartAngle) * Math.PI / 180,//5/4 * Math.PI,* Math.PI/90
+                            stroke: 'rgb(' + currentValue.R + ', ' + currentValue.G + ', ' + currentValue.B + ')'
+                        }
+                    });
+
+
+                });
+            }
+            net.render();
+        }
+        var RequestData = function (net, type, layer) {
+            $.ajax({
+                url: 'AutoCad/GetData',
+                type: 'get',
+                async: 'false',
+                data: { type: type, layer: layer },
+                success: function (data) {
+
+                    var selects = $("#layer");
+                   
+
+                    if (selects.children().length <= 0) {
+                        var option = "<option value='all'>全部</option>";
+                        data.list.forEach(function (currentValue) {
+                            currentValue.LayerLists.forEach(function (value) {
+                                option += "<option value='" + value.Name + "'>" + value.Name + "";
+                                option += "</option>";
+                            
+                            });
+                        });
+                        selects.append(option);
+                    }
+                   
+                    data.list.forEach(function (currentValue) {
+
+                        console.log(currentValue);
+
+                     
+                        drawCanvas(currentValue.PElementLists, net);
+                        
+                    });                  
+                }
+            });
+        }
+    </script>
+</body>
+</html>
